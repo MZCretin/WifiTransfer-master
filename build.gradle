@@ -1,0 +1,49 @@
+// Top-level build file where you can add configuration options common to all sub-projects/modules.
+
+buildscript {
+    repositories {
+        jcenter()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:2.2.1'
+        classpath 'com.neenbedankt.gradle.plugins:android-apt:1.8'
+        classpath 'me.tatarka:gradle-retrolambda:3.2.5'
+
+        // NOTE: Do not place your application dependencies here; they belong
+        // in the individual module build.gradle files
+    }
+}
+
+allprojects {
+    repositories {
+        jcenter()
+    }
+}
+
+task clean(type: Delete) {
+    delete rootProject.buildDir
+}
+
+ext {
+    minSdkVersion = 15
+    targetSdkVersion = 24
+    compileSdkVersion = 24
+    buildToolsVersion = "24.0.2"
+    sourceCompatibilityVersion = JavaVersion.VERSION_1_8
+    targetCompatibilityVersion = JavaVersion.VERSION_1_8
+}
+def supportVersion = "24.2.0"
+ext.deps = [
+        supportAppCompat   : "com.android.support:appcompat-v7:$supportVersion",
+        supportDesign      : "com.android.support:design:$supportVersion",
+        butterknife        : "com.jakewharton:butterknife:8.4.0",
+        butterknifeCompiler: "com.jakewharton:butterknife-compiler:8.4.0",
+//        retrofit2          : "com.squareup.retrofit2:retrofit:2.1.0",
+//        rxjava             : "io.reactivex:rxjava:x.y.z",
+//        converterGson      : "com.squareup.retrofit2:converter-gson:2.0.2",
+//        adapterRxjava      : "com.squareup.retrofit2:adapter-rxjava:2.0.2",
+//        rxandroid          : "io.reactivex:rxandroid:1.2.1",
+        androidasync       : "com.koushikdutta.async:androidasync:2.+",
+        timber             : 'com.jakewharton.timber:timber:4.1.2',
+        rxbus              : "com.hwangjr.rxbus:rxbus:1.0.5",
+]

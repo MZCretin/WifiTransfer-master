@@ -1,0 +1,12 @@
+<resources>
+    <string name="app_name">Wifi APP安装</string>
+    <string name="wlan_enabled">WLAN服务已开启</string>
+    <string name="wlan_disabled">WLAN服务未开启</string>
+    <string name="pls_check_network_state">请检查您的网络设置</string>
+    <string name="fail_to_start_http_service">启动HTTP服务失败</string>
+    <string name="retrofit_wlan_address">正在获取地址...</string>
+    <string name="pls_input_the_following_address_in_pc_browser">请在电脑浏览器地址栏完整输入</string>
+    <string name="cancel">取消</string>
+    <string name="set_network">设置网络</string>
+    <string name="http_address">http://%1$s:%2$d</string>
+</resources>
