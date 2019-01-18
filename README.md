@@ -16,6 +16,9 @@
 ### 网页端截图
 <img src="./screenshot/yemian.png" width="30%"/>
 
+### Apk下载体验
+[Apk下载](https://raw.githubusercontent.com/MZCretin/WifiTransfer-master/master/apk/wifitransfer.apk)
+
 ### 版权声明 
 有了这个想法之后，就去找了下资料，真巧，发现了一个网友的博客，正好实现的功能跟我的差不多，多看Android版本WIFI传书的实现 ，实现的是WIFI传书的
 功能，主要是Server模块和网页端都写好了，跟我的需求差不了多少，所以花了几小时把他的项目Clone下来改了改
