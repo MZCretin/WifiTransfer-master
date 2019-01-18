@@ -1,5 +1,5 @@
 apply plugin: 'com.android.application'
-apply plugin: 'android-apt'
+//apply plugin: 'android-apt'
 apply plugin: 'me.tatarka.retrolambda'
 android {
     compileSdkVersion rootProject.ext.compileSdkVersion
@@ -24,19 +24,19 @@ android {
 }
 
 dependencies {
-    compile fileTree(dir: 'libs', include: "*.jar")
-    compile deps.supportAppCompat
-    compile deps.supportDesign
-    compile deps.butterknife
-    apt deps.butterknifeCompiler
+    implementation fileTree(dir: 'libs', include: "*.jar")
+    implementation deps.supportAppCompat
+    implementation deps.supportDesign
+    implementation deps.butterknife
+    annotationProcessor deps.butterknifeCompiler
 //    compile deps.retrofit2
 //    compile deps.rxjava
 //    compile deps.converterGson
 //    compile deps.adapterRxjava
 //    compile deps.rxandroid
-    compile(deps.rxbus) {
+    implementation(deps.rxbus) {
         exclude group: 'com.jakewharton.timber', module: 'timber'
     }
-    compile deps.androidasync
-    compile deps.timber
+    implementation deps.androidasync
+    implementation deps.timber
 }

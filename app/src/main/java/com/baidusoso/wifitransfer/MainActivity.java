@@ -1,5 +1,6 @@
 package com.baidusoso.wifitransfer;
 
+import android.Manifest;
 import android.animation.Animator;
 import android.animation.ObjectAnimator;
 import android.content.Context;
@@ -13,7 +14,11 @@ import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.provider.Settings;
+import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.content.FileProvider;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AlertDialog;
@@ -23,6 +28,7 @@ import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.text.TextUtils;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -56,13 +62,13 @@ import timber.log.Timber;
 
 public class MainActivity extends AppCompatActivity implements Animator.AnimatorListener {
     Unbinder mUnbinder;
-    @BindView( R.id.toolbar )
+    @BindView(R.id.toolbar)
     Toolbar mToolbar;
-    @BindView( R.id.fab )
+    @BindView(R.id.fab)
     FloatingActionButton mFab;
-    @BindView( R.id.recyclerview )
+    @BindView(R.id.recyclerview)
     RecyclerView mAppList;
-    @BindView( R.id.content_main )
+    @BindView(R.id.content_main)
     SwipeRefreshLayout mSwipeRefreshLayout;
 
     List<InfoModel> mApps = new ArrayList<>();
@@ -79,9 +85,9 @@ public class MainActivity extends AppCompatActivity implements Animator.Animator
         mToolbar.setOnMenuItemClickListener(new Toolbar.OnMenuItemClickListener() {
             @Override
             public boolean onMenuItemClick(MenuItem item) {
-                switch ( item.getItemId() ) {
+                switch (item.getItemId()) {
                     case R.id.test_menu1:
-                        if ( !mApps.isEmpty() ) {
+                        if (!mApps.isEmpty()) {
                             showDialog();
                         } else {
                             Toast.makeText(MainActivity.this, "暂无可删内容", Toast.LENGTH_SHORT).show();
@@ -96,33 +102,68 @@ public class MainActivity extends AppCompatActivity implements Animator.Animator
         initRecyclerView();
     }
 
+    String[] allpermissions = new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE,
+            Manifest.permission.READ_EXTERNAL_STORAGE};
+
+    private boolean requestPermission() {
+        if (Build.VERSION.SDK_INT >= 23) {
+            boolean needapply = false;
+            for (int i = 0; i < allpermissions.length; i++) {
+                int chechpermission = ContextCompat.checkSelfPermission(getApplicationContext(),
+                        allpermissions[i]);
+                if (chechpermission != PackageManager.PERMISSION_GRANTED) {
+                    needapply = true;
+                }
+            }
+            if (needapply) {
+                ActivityCompat.requestPermissions(MainActivity.this, allpermissions, 1);
+            }
+            return !needapply;
+        }
+        return true;
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        for (int i = 0; i < grantResults.length; i++) {
+            if (grantResults[i] == PackageManager.PERMISSION_GRANTED) {
+                Toast.makeText(MainActivity.this, permissions[i] + "已授权", Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(MainActivity.this, permissions[i] + "授权通过方能使用", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.item_menu, menu);//加载menu布局
         return true;
     }
 
-    @OnClick( R.id.fab )
+    @OnClick(R.id.fab)
     public void onClick(View view) {
-        ObjectAnimator objectAnimator = ObjectAnimator.ofFloat(mFab, "translationY", 0, mFab.getHeight() * 2).setDuration(200L);
-        objectAnimator.setInterpolator(new AccelerateInterpolator());
-        objectAnimator.addListener(this);
-        objectAnimator.start();
+        if (requestPermission()) {
+            ObjectAnimator objectAnimator = ObjectAnimator.ofFloat(mFab, "translationY", 0, mFab.getHeight() * 2).setDuration(200L);
+            objectAnimator.setInterpolator(new AccelerateInterpolator());
+            objectAnimator.addListener(this);
+            objectAnimator.start();
+        }
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
         WebService.stop(this);
-        if ( mUnbinder != null ) {
+        if (mUnbinder != null) {
             mUnbinder.unbind();
         }
         RxBus.get().unregister(this);
     }
 
-    @Subscribe( tags = {@Tag( Constants.RxBusEventType.POPUP_MENU_DIALOG_SHOW_DISMISS )} )
+    @Subscribe(tags = {@Tag(Constants.RxBusEventType.POPUP_MENU_DIALOG_SHOW_DISMISS)})
     public void onPopupMenuDialogDismiss(Integer type) {
-        if ( type == Constants.MSG_DIALOG_DISMISS ) {
+        if (type == Constants.MSG_DIALOG_DISMISS) {
             WebService.stop(this);
             ObjectAnimator objectAnimator = ObjectAnimator.ofFloat(mFab, "translationY", mFab.getHeight() * 2, 0).setDuration(200L);
             objectAnimator.setInterpolator(new AccelerateInterpolator());
@@ -198,7 +239,7 @@ public class MainActivity extends AppCompatActivity implements Animator.Animator
         PackageManager pm = getPackageManager();
         PackageInfo info = pm.getPackageArchiveInfo(archiveFilePath, 0);
 
-        if ( info != null ) {
+        if (info != null) {
             ApplicationInfo appInfo = info.applicationInfo;
             appInfo.sourceDir = archiveFilePath;
             appInfo.publicSourceDir = archiveFilePath;
@@ -206,10 +247,10 @@ public class MainActivity extends AppCompatActivity implements Animator.Animator
             String version = info.versionName;       //得到版本信息
             Drawable icon = pm.getApplicationIcon(appInfo);
             String appName = pm.getApplicationLabel(appInfo).toString();
-            if ( TextUtils.isEmpty(appName) ) {
+            if (TextUtils.isEmpty(appName)) {
                 appName = getApplicationName(packageName);
             }
-            if ( icon == null ) {
+            if (icon == null) {
                 icon = getIconFromPackageName(packageName, this); // 获得应用程序图标
             }
             infoModel.setName(appName);
@@ -219,7 +260,7 @@ public class MainActivity extends AppCompatActivity implements Animator.Animator
             infoModel.setVersion(version);
             infoModel.setIcon(icon);
             infoModel.setInstalled(isAvilible(this, packageName));
-            if ( list == null )
+            if (list == null)
                 mApps.add(infoModel);
             else
                 list.add(infoModel);
@@ -228,29 +269,29 @@ public class MainActivity extends AppCompatActivity implements Animator.Animator
 
     public synchronized static Drawable getIconFromPackageName(String packageName, Context context) {
         PackageManager pm = context.getPackageManager();
-        if ( Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1 ) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1) {
             try {
                 PackageInfo pi = pm.getPackageInfo(packageName, 0);
                 Context otherAppCtx = context.createPackageContext(packageName, Context.CONTEXT_IGNORE_SECURITY);
                 int displayMetrics[] = {DisplayMetrics.DENSITY_XXXHIGH, DisplayMetrics.DENSITY_XXHIGH, DisplayMetrics.DENSITY_XHIGH, DisplayMetrics.DENSITY_HIGH, DisplayMetrics.DENSITY_TV};
-                for ( int displayMetric : displayMetrics ) {
+                for (int displayMetric : displayMetrics) {
                     try {
                         Drawable d = otherAppCtx.getResources().getDrawableForDensity(pi.applicationInfo.icon, displayMetric);
-                        if ( d != null ) {
+                        if (d != null) {
                             return d;
                         }
-                    } catch ( Resources.NotFoundException e ) {
+                    } catch (Resources.NotFoundException e) {
                         continue;
                     }
                 }
-            } catch ( Exception e ) {
+            } catch (Exception e) {
                 // Handle Error here
             }
         }
         ApplicationInfo appInfo = null;
         try {
             appInfo = pm.getApplicationInfo(packageName, 0);
-        } catch ( PackageManager.NameNotFoundException e ) {
+        } catch (PackageManager.NameNotFoundException e) {
             return null;
         }
         return appInfo.loadIcon(pm);
@@ -265,23 +306,23 @@ public class MainActivity extends AppCompatActivity implements Animator.Animator
         df.format(d2);
         df.format(d3);
         long l = length / 1000;//KB
-        if ( l < 1024 ) {
+        if (l < 1024) {
             return df.format(l) + "KB";
-        } else if ( l < 1024 * 1024.f ) {
+        } else if (l < 1024 * 1024.f) {
             return df.format((l / 1024.f)) + "MB";
         }
         return df.format(l / 1024.f / 1024.f) + "GB";
     }
 
-    @Subscribe( thread = EventThread.IO, tags = {@Tag( Constants.RxBusEventType.LOAD_BOOK_LIST )} )
+    @Subscribe(thread = EventThread.IO, tags = {@Tag(Constants.RxBusEventType.LOAD_BOOK_LIST)})
     public void loadAppList(Integer type) {
         Timber.d("loadAppList:" + Thread.currentThread().getName());
         List<InfoModel> listArr = new ArrayList<>();
         File dir = Constants.DIR;
-        if ( dir.exists() && dir.isDirectory() ) {
+        if (dir.exists() && dir.isDirectory()) {
             File[] fileNames = dir.listFiles();
-            if ( fileNames != null ) {
-                for ( File fileName : fileNames ) {
+            if (fileNames != null) {
+                for (File fileName : fileNames) {
                     handleApk(fileName.getAbsolutePath(), fileName.length(), listArr);
                 }
             }
@@ -300,12 +341,12 @@ public class MainActivity extends AppCompatActivity implements Animator.Animator
         try {
             packageManager = getApplicationContext().getPackageManager();
             applicationInfo = packageManager.getApplicationInfo(packageName, 0);
-        } catch ( PackageManager.NameNotFoundException e ) {
+        } catch (PackageManager.NameNotFoundException e) {
             applicationInfo = null;
         }
-        if ( packageManager != null && applicationInfo != null ) {
+        if (packageManager != null && applicationInfo != null) {
             String applicationName =
-                    ( String ) packageManager.getApplicationLabel(applicationInfo);
+                    (String) packageManager.getApplicationLabel(applicationInfo);
             return applicationName;
         }
         return packageName;
@@ -319,10 +360,10 @@ public class MainActivity extends AppCompatActivity implements Animator.Animator
             public void call(Subscriber<? super List<InfoModel>> subscriber) {
                 List<InfoModel> list = new ArrayList<>();
                 File dir = Constants.DIR;
-                if ( dir.exists() && dir.isDirectory() ) {
+                if (dir.exists() && dir.isDirectory()) {
                     File[] fileNames = dir.listFiles();
-                    if ( fileNames != null ) {
-                        for ( File fileName : fileNames ) {
+                    if (fileNames != null) {
+                        for (File fileName : fileNames) {
                             handleApk(fileName.getAbsolutePath(), fileName.length(), list);
                         }
                     }
@@ -354,7 +395,7 @@ public class MainActivity extends AppCompatActivity implements Animator.Animator
         @Override
         public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
             LayoutInflater inflater = LayoutInflater.from(parent.getContext());
-            if ( viewType == 1 ) {
+            if (viewType == 1) {
                 View view = inflater.inflate(R.layout.empty_view, parent, false);
                 return new EmptyViewHolder(view);
             } else {
@@ -364,11 +405,12 @@ public class MainActivity extends AppCompatActivity implements Animator.Animator
             }
         }
 
+        boolean installAllowed = false;
 
         @Override
         public void onBindViewHolder(final RecyclerView.ViewHolder holder1, int position) {
-            if ( holder1 instanceof MyViewHolder ) {
-                MyViewHolder holder = ( MyViewHolder ) holder1;
+            if (holder1 instanceof MyViewHolder) {
+                MyViewHolder holder = (MyViewHolder) holder1;
                 InfoModel infoModel = mApps.get(position);
                 holder.mTvAppName.setText(infoModel.getName() + "(v" + infoModel.getVersion() + ")");
 
@@ -381,7 +423,20 @@ public class MainActivity extends AppCompatActivity implements Animator.Animator
                 holder.mTvAppInstall.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        installApkFile(MainActivity.this, new File(infoModel.getPath()));
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                            installAllowed = getPackageManager().canRequestPackageInstalls();
+                            if (installAllowed) {
+                                installApkFile(MainActivity.this, new File(infoModel.getPath()));
+                            } else {
+                                Intent intent = new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:" + getPackageName()));
+                                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                                startActivity(intent);
+                                installApkFile(MainActivity.this, new File(infoModel.getPath()));
+                                return;
+                            }
+                        } else {
+                            installApkFile(MainActivity.this, new File(infoModel.getPath()));
+                        }
                     }
                 });
                 holder.mTvAppDelete.setOnClickListener(new View.OnClickListener() {
@@ -391,7 +446,7 @@ public class MainActivity extends AppCompatActivity implements Animator.Animator
                     }
                 });
 
-                if ( infoModel.isInstalled() ) {
+                if (infoModel.isInstalled()) {
                     holder.mTvAppDelete.setVisibility(View.VISIBLE);
                 } else {
                     holder.mTvAppDelete.setVisibility(View.GONE);
@@ -422,18 +477,18 @@ public class MainActivity extends AppCompatActivity implements Animator.Animator
 
             public MyViewHolder(View view) {
                 super(view);
-                mTvAppName = ( TextView ) view.findViewById(R.id.tv_name);
-                mTvAppSize = ( TextView ) view.findViewById(R.id.tv_size);
-                mTvAppInstall = ( TextView ) view.findViewById(R.id.tv_install);
-                mTvAppPath = ( TextView ) view.findViewById(R.id.tv_path);
-                mTvAppDelete = ( TextView ) view.findViewById(R.id.tv_delete);
-                ivIcon = ( ImageView ) view.findViewById(R.id.iv_icon);
+                mTvAppName = (TextView) view.findViewById(R.id.tv_name);
+                mTvAppSize = (TextView) view.findViewById(R.id.tv_size);
+                mTvAppInstall = (TextView) view.findViewById(R.id.tv_install);
+                mTvAppPath = (TextView) view.findViewById(R.id.tv_path);
+                mTvAppDelete = (TextView) view.findViewById(R.id.tv_delete);
+                ivIcon = (ImageView) view.findViewById(R.id.iv_icon);
             }
         }
 
         @Override
         public int getItemViewType(int position) {
-            if ( mApps.size() == 0 ) {
+            if (mApps.size() == 0) {
                 return 1;
             }
             return super.getItemViewType(position);
@@ -452,9 +507,9 @@ public class MainActivity extends AppCompatActivity implements Animator.Animator
 
         //获取手机系统的所有APP包名，然后进行一一比较
         List<PackageInfo> pinfo = packageManager.getInstalledPackages(0);
-        for ( int i = 0; i < pinfo.size(); i++ ) {
-            if ( (( PackageInfo ) pinfo.get(i)).packageName
-                    .equalsIgnoreCase(packageName) )
+        for (int i = 0; i < pinfo.size(); i++) {
+            if (((PackageInfo) pinfo.get(i)).packageName
+                    .equalsIgnoreCase(packageName))
                 return true;
         }
         return false;
@@ -464,7 +519,7 @@ public class MainActivity extends AppCompatActivity implements Animator.Animator
     public static void installApkFile(Context context, File file) {
         Intent intent = new Intent(Intent.ACTION_VIEW);
         //兼容7.0
-        if ( Build.VERSION.SDK_INT >= Build.VERSION_CODES.N ) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
             Uri contentUri = FileProvider.getUriForFile(context, context.getPackageName() + ".fileprovider", file);
             intent.setDataAndType(contentUri, "application/vnd.android.package-archive");
@@ -472,7 +527,7 @@ public class MainActivity extends AppCompatActivity implements Animator.Animator
             intent.setDataAndType(Uri.fromFile(file), "application/vnd.android.package-archive");
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         }
-        if ( context.getPackageManager().queryIntentActivities(intent, 0).size() > 0 ) {
+        if (context.getPackageManager().queryIntentActivities(intent, 0).size() > 0) {
             context.startActivity(intent);
         }
     }
@@ -487,10 +542,10 @@ public class MainActivity extends AppCompatActivity implements Animator.Animator
     //删除所有文件
     private void deleteAll() {
         File dir = Constants.DIR;
-        if ( dir.exists() && dir.isDirectory() ) {
+        if (dir.exists() && dir.isDirectory()) {
             File[] fileNames = dir.listFiles();
-            if ( fileNames != null ) {
-                for ( File fileName : fileNames ) {
+            if (fileNames != null) {
+                for (File fileName : fileNames) {
                     fileName.delete();
                 }
             }

@@ -39,7 +39,7 @@
         android:layout_gravity="center_horizontal"
         android:layout_marginTop="5dp"
         android:gravity="center"
-        android:text="@string/pls_input_the_following_address_in_pc_browser"
+        android:text=""
         android:textSize="15sp" />
 
     <TextView
@@ -49,7 +49,7 @@
         android:layout_gravity="center_horizontal"
         android:layout_marginTop="5dp"
         android:gravity="center"
-        android:text="http://10.100.9.195:8081"
+        android:text="http://0.0.0.0:0000"
         android:textColor="@color/colorWifiConnected"
         android:textSize="15sp" />
 
